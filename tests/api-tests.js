@@ -24,6 +24,8 @@ let sandbox = null // sandbox que contiene las funciones falsas
 let server = null //instancia del servidor
 let contactsRepo = {} //mockeo de la base de datos
 let token
+
+//también se puede usar la funcion sign para crear el token
 let badSignToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbiI6dHJ1ZSwidXNlcm5hbWUiOiJEaWVnbyIsImlhdCI6MTU2NDY3NDAxMn0.uiVIXDojibLyYzCbS3Jtu70eReBoukz8HBgp5qYE7n0";
 let tokenWithoutUsername = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbnQiOnRydWUsImlhdCI6MTU2NDY3NDUzMn0.CvXU2eFUOXScT_5_yLjIbcB4c1obArfK_vdIz9Ruxlg"
 
@@ -90,6 +92,23 @@ test.serial.cb('/contacts get all contacts', t => {
           "Number": "1111"
         }
       ], 'response body should be the expected') // se valida que la respuesta sea igual a la esperada
+      t.end()
+    })
+})
+
+test.serial.cb('/contacts - BD error', t => {
+  contactsRepo.getAllUser = sandbox.stub()
+  contactsRepo.getAllUser.throws(new Error('BD error')) //sin parametros siempre retorna una promesa con datos quemados
+
+  request(server)
+    .get('/contacts') //ruta y metodo
+    .set('Authorization', `Bearer ${token}`)
+    .expect(500) //status esperado
+    .expect('Content-Type', /json/) //tipo de respuesta esperada que contenga json
+    .end((err, res) => {
+      t.falsy(err, 'should not return an error')  //validar que no haya errores
+      let body = res.body
+      t.deepEqual(body, {error: 'BD error'}, 'response body should be the expected') // se valida que la respuesta sea igual a la esperada
       t.end()
     })
 })

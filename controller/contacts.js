@@ -1,6 +1,6 @@
 'use strict'
 
-let contactsService = require('../services/contacts');
+const contactsService = require('../services/contacts')
 
 const getContacts = async (req, res, next) => {
   let contacts;
