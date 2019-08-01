@@ -16,8 +16,12 @@ const getContacts = async (req, res, next) => {
 
 
 const getContact = async (req, res, next) => {
-
   let contact;
+  let { user } = req;
+  if (!user || !user.username) {
+    return next(new Error('Not authorized'))
+  }
+
   try {
     contact = await contactsService.getContact(req.params.id);
   }

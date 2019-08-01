@@ -1,8 +1,11 @@
 var express = require('express');
 var router = express.Router();
-let contactsController = require('../controller/contacts')
+const contactsController = require('../controller/contacts')
+const auth = require('express-jwt')
 
-router.get('/', contactsController.getContacts);
-router.get('/:id', contactsController.getContact);
+const config = require('../config/config')
+
+router.get('/', auth(config.auth), contactsController.getContacts);
+router.get('/:id', auth(config.auth), contactsController.getContact);
 
 module.exports = router;
