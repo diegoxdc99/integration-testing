@@ -23,11 +23,18 @@ const sign = util.promisify(auth.sign)
 let sandbox = null // sandbox que contiene las funciones falsas
 let server = null //instancia del servidor
 let contactsRepo = {} //mockeo de la base de datos
-let token
+let payloadToken = {
+  admin: true,
+  username: 'Diego',
+  permissions: ["contact:read"]
+}
 
+
+let token
 //también se puede usar la funcion sign para crear el token
-let badSignToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbiI6dHJ1ZSwidXNlcm5hbWUiOiJEaWVnbyIsImlhdCI6MTU2NDY3NDAxMn0.uiVIXDojibLyYzCbS3Jtu70eReBoukz8HBgp5qYE7n0";
-let tokenWithoutUsername = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbnQiOnRydWUsImlhdCI6MTU2NDY3NDUzMn0.CvXU2eFUOXScT_5_yLjIbcB4c1obArfK_vdIz9Ruxlg"
+const badSignToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbiI6dHJ1ZSwidXNlcm5hbWUiOiJEaWVnbyIsImlhdCI6MTU2NDY3NDAxMn0.uiVIXDojibLyYzCbS3Jtu70eReBoukz8HBgp5qYE7n0";
+const tokenWithoutUsername = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwZXJtaXNzaW9ucyI6WyJjb250YWN0OnJlYWQiXSwiaWF0IjoxNTE2MjM5MDIyfQ.Ht5ehWM9dtZOD-B3QfH5kzqUbGxb90Q_D9jdIaeN1jQ"
+const tokenWithEmptyPermisions = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwZXJtaXNzaW9ucyI6W10sImlhdCI6MTUxNjIzOTAyMn0.iFXvAAGwCog-mBB1FLgBOvMCKGUffeEL3zlT9XqCDoA"
 
 test.beforeEach(async () => {
   sandbox = sinon.createSandbox()  //se crea un sandbox
@@ -44,7 +51,7 @@ test.beforeEach(async () => {
   contactsRepo.getUser.withArgs(fixtures.contactError.name).throws(new Error('unkwnonw error')); //con argumentos arroja un error
   contactsRepo.getUser.throws(new Error('Contact not found')); //en caso de no cumplir con las reglas anteriores arroja un error
 
-  token = await sign({ admin: true, username: 'Diego' }, config.auth.secret)
+  token = await sign(payloadToken, config.auth.secret)
 
   const contactService = proxyquire('../services/contacts', { //sirve para inyectar el mock del modulo
     '../repository/contacts': contactsRepo
@@ -192,6 +199,20 @@ test.serial.cb('/contacts/:id - without token username', t => {
       t.falsy(err, 'should not return an error')
       let body = res.body
       t.deepEqual(body, {"error": "Not authorized"}, 'response body should be the expected')
+      t.end()
+    })
+})
+
+test.serial.cb('/contacts/:id - token witout permision', t => {
+  request(server)
+    .get('/contacts/'+fixtures.single.name)
+    .set('Authorization', `Bearer ${tokenWithEmptyPermisions}`)
+    .expect(401)
+    .expect('Content-Type', /json/)
+    .end((err, res) => {
+      t.falsy(err, 'should not return an error')
+      let body = res.body
+      t.deepEqual(body, {"error": "Permission denied"}, 'response body should be the expected')
       t.end()
     })
 })
