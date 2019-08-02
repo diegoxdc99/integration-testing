@@ -1,3 +1,8 @@
+/*
+  Para no tener instancias a base de datos se hace con codigo quemado simulando
+  comportamiento asincrono
+*/
+
 let allContacts = [
   {
     "name": "Diego",
